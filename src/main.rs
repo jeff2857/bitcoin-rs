@@ -1,10 +1,10 @@
-use std::ops::{Add, Sub, Neg, Mul, Rem};
+use std::ops::{Add, Sub, Neg, Mul, Div};
 
 #[derive(Clone, Copy)]
 #[derive(Debug)]
 struct FieldElement {
-    pub num: i32,
-    pub prime: i32,
+    pub num: i64,
+    pub prime: i64,
 }
 
 impl PartialEq for FieldElement {
@@ -64,7 +64,23 @@ impl Mul for FieldElement {
         assert_eq!(self.prime, rhs.prime);
 
         Self {
-            num: (self.num * rhs.num) % self.prime,
+            num: self.num * rhs.num % self.prime,
+            prime: self.prime,
+        }
+    }
+}
+
+impl Div for FieldElement {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        let temp = Self {
+            num: rhs.num.pow((rhs.prime - 2) as u32),
+            prime: rhs.prime,
+        };
+
+        Self {
+            num: (self * temp).num,
             prime: self.prime,
         }
     }
@@ -77,23 +93,30 @@ impl FieldElement {
         }
 
         FieldElement {
-            num,
-            prime,
+            num: num as i64,
+            prime: prime as i64,
         }
     }
 
-    pub fn pow(&self, exponent: u32) -> Self {
+    pub fn pow(&self, mut exponent: i64) -> Self {
+        if exponent < 0 {
+            exponent = self.prime - 1 + exponent;
+        }
+
         Self {
-            num: self.num.pow(exponent) % self.prime,
+            num: self.num.pow(exponent as u32) % self.prime,
             prime: self.prime,
         }
     }
 }
 
 fn main() {
-    let a = FieldElement::new(3, 13);
-    let b = FieldElement::new(1, 13);
+    let a = FieldElement::new(7, 13);
+    let b = FieldElement::new(8, 13);
     let c = FieldElement::new(10, 13);
 
-    println!("{}", a.pow(3) == b);
+    println!("{:?}", a.pow(-3));
+    //println!("{:?}", b.pow((b.prime - 2) as u32));
+    //println!("{:?}", b.pow(12));
+    //println!("{:?}", c.pow(12));
 }
