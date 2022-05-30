@@ -87,14 +87,14 @@ impl Div for FieldElement {
 }
 
 impl FieldElement {
-    pub fn new(num: i32, prime: i32) -> Self {
+    pub fn new(num: i64, prime: i64) -> Self {
         if num >= prime || num < 0 {
             panic!("Num {} not in field range 0 to {}", num, prime);
         }
 
         FieldElement {
-            num: num as i64,
-            prime: prime as i64,
+            num,
+            prime,
         }
     }
 
@@ -113,14 +113,14 @@ impl FieldElement {
 #[derive(Debug)]
 #[derive(Clone, Copy)]
 struct Point {
-    pub a: i64,
-    pub b: i64,
-    pub x: Option<i64>,
-    pub y: Option<i64>,
+    pub a: FieldElement,
+    pub b: FieldElement,
+    pub x: Option<FieldElement>,
+    pub y: Option<FieldElement>,
 }
 
 impl Point {
-    pub fn new(x: Option<i64>, y: Option<i64>, a: i64, b: i64) -> Self {
+    pub fn new(x: Option<FieldElement>, y: Option<FieldElement>, a: FieldElement, b: FieldElement) -> Self {
        let point = Self {
             a,
             b,
@@ -129,17 +129,17 @@ impl Point {
         };
  
         if x.is_none() && y.is_none() {
-            point
-        } else {
-            if x.is_none() || y.is_none() {
-                panic!("({:?}, {:?}) is not on the curve", x, y);
-            } else {
-                let x = x.unwrap();
-                let y = y.unwrap();
-                assert!(y.pow(2) == (x.pow(3) + a * x + b), "({:?}, {:?}) is not on the curve", x, y);
-                point
-            }
+            return point;
         }
+        if x.is_none() || y.is_none() {
+            panic!("({:?}, {:?}) is not on the curve", x, y);
+        }
+
+        let x = x.unwrap();
+        let y = y.unwrap();
+
+        assert!(y.pow(2) == (x.pow(3) + a * x + b), "({:?}, {:?}) is not on the curve", x, y);
+        point
     }
 }
 
@@ -172,7 +172,7 @@ impl Add for Point {
         let y2 = rhs.y.unwrap();
 
         // two pints are on the same coordinate and y = 0
-        if self == rhs && self.y == Some(0) {
+        if self == rhs && self.y == Some(FieldElement::new(0, x1.prime)) {
             return Self {
                 x: None,
                 y: None,
@@ -193,27 +193,59 @@ impl Add for Point {
                 }
             } else {
                 // two points are on the same coordinate
-                s = (3 * x1.pow(2) + self.a) / (2 * y1);
+                s = (3 * x1.pow(2).num + self.a.num) / (2 * y1.num);
             }
         } else {
-            s = (y2 - y1) / (x2 - x1);
+            s = (y2.num - y1.num) / (x2.num - x1.num);
         }
 
-        let x3 = s.pow(2) - x1 - x2;
-        let y3 = s * (x1 - x3) - y1;
+        let x3 = s.pow(2) - x1.num - x2.num;
+        let y3 = s * (x1.num - x3) - y1.num;
         Self {
             a: self.a,
             b: self.b,
-            x: Some(x3),
-            y: Some(y3),
+            x: Some(FieldElement::new(x3, self.a.prime)),
+            y: Some(FieldElement::new(y3, self.a.prime)),
         }
     }
 }
 
 fn main() {
-    let a = FieldElement::new(7, 13);
-    let b = FieldElement::new(8, 13);
-    let c = FieldElement::new(10, 13);
+}
 
-    let p1 = Point::new(Some(-1), Some(-1), 5, 7);
+
+#[cfg(test)]
+mod tests {
+    use crate::{FieldElement, Point};
+
+    #[test]
+    fn test_on_curve() {
+        let prime = 223;
+        let a = FieldElement::new(0, prime);
+        let b = FieldElement::new(7, prime);
+
+        let valid_points = [(192, 105), (17, 56), (1, 193)];
+
+        for (x_raw, y_raw) in valid_points {
+            let x = FieldElement::new(x_raw, prime);
+            let y = FieldElement::new(y_raw, prime);
+            Point::new(Some(x), Some(y), a, b);
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_not_on_curve() {
+        let prime = 223;
+        let a = FieldElement::new(0, prime);
+        let b = FieldElement::new(0, prime);
+
+        let invalid_points = [(200, 119), (42, 99)];
+
+        for (x_raw, y_raw) in invalid_points {
+            let x = FieldElement::new(x_raw, prime);
+            let y = FieldElement::new(y_raw, prime);
+            Point::new(Some(x), Some(y), a, b);
+        }
+    }
 }
