@@ -1,5 +1,8 @@
 use std::ops::{Add, Sub, Neg, Mul, Div};
 
+use num_bigint::BigInt;
+
+
 #[derive(Clone, Copy)]
 #[derive(Debug)]
 struct FieldElement {
@@ -74,8 +77,10 @@ impl Div for FieldElement {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
+        let mut temp = BigInt::from(rhs.num);
+        temp = temp.pow((rhs.prime - 2) as u32);
         let temp = Self {
-            num: rhs.num.pow((rhs.prime - 2) as u32),
+            num: (temp % self.prime).to_u64_digits().1[0] as i64,
             prime: rhs.prime,
         };
 
@@ -193,24 +198,38 @@ impl Add for Point {
                 }
             } else {
                 // two points are on the same coordinate
-                s = (3 * x1.pow(2).num + self.a.num) / (2 * y1.num);
+                let temp1 = x1.pow(2);
+                let temp2 = FieldElement::new(3 * temp1.num, x1.prime);
+                let temp3 = FieldElement::new(2 * y1.num, x1.prime);
+                s = (temp2 + self.a) / (temp3);
             }
         } else {
-            s = (y2.num - y1.num) / (x2.num - x1.num);
+            s = (y2 - y1) / (x2 - x1);
         }
 
-        let x3 = s.pow(2) - x1.num - x2.num;
-        let y3 = s * (x1.num - x3) - y1.num;
+        let x3 = s.pow(2) - x1 - x2;
+        let y3 = s * (x1 - x3) - y1;
         Self {
             a: self.a,
             b: self.b,
-            x: Some(FieldElement::new(x3, self.a.prime)),
-            y: Some(FieldElement::new(y3, self.a.prime)),
+            x: Some(x3),
+            y: Some(y3),
         }
     }
 }
 
 fn main() {
+    let prime = 223;
+    let a = FieldElement::new(0, prime);
+    let b = FieldElement::new(7, prime);
+    let x1 = FieldElement::new(192, prime);
+    let y1 = FieldElement::new(105, prime);
+    let x2 = FieldElement::new(17, prime);
+    let y2 = FieldElement::new(56, prime);
+    let p1 = Point::new(Some(x1), Some(y1), a, b);
+    let p2 = Point::new(Some(x2), Some(y2), a, b);
+    let p = p1 + p2;
+    println!("{:?}", p);
 }
 
 
@@ -247,5 +266,28 @@ mod tests {
             let y = FieldElement::new(y_raw, prime);
             Point::new(Some(x), Some(y), a, b);
         }
+    }
+
+    #[test]
+    fn test_addition() {
+        let prime = 223;
+        let a = FieldElement::new(0, prime);
+        let b = FieldElement::new(7, prime);
+
+        let x1 = FieldElement::new(192, prime);
+        let y1 = FieldElement::new(105, prime);
+        let x2 = FieldElement::new(17, prime);
+        let y2 = FieldElement::new(56, prime);
+
+        let p1 = Point::new(Some(x1), Some(y1), a, b);
+        let p2 = Point::new(Some(x2), Some(y2), a, b);
+
+        let expected_point = Point::new(
+            Some(FieldElement::new(170, prime)),
+            Some(FieldElement::new(142, prime)),
+            a,
+            b,
+        );
+        assert_eq!(expected_point, p1 + p2);
     }
 }
