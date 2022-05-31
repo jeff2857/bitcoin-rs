@@ -146,6 +146,22 @@ impl Point {
         assert!(y.pow(2) == (x.pow(3) + a * x + b), "({:?}, {:?}) is not on the curve", x, y);
         point
     }
+
+    pub fn multi(&self, coefficient: u32) -> Self {
+        let mut coef = coefficient;
+        let mut current = *self;
+        let mut result = Self::new(None, None, self.a, self.b);
+
+        while coef != 0 {
+            if (coef & 1) != 0 {
+                result = result + current;
+            }
+            current = current + current;
+            coef >>= 1;
+        }
+
+        result
+    }
 }
 
 impl PartialEq for Point {
@@ -199,8 +215,8 @@ impl Add for Point {
             } else {
                 // two points are on the same coordinate
                 let temp1 = x1.pow(2);
-                let temp2 = FieldElement::new(3 * temp1.num, x1.prime);
-                let temp3 = FieldElement::new(2 * y1.num, x1.prime);
+                let temp2 = FieldElement::new(3 * temp1.num % x1.prime, x1.prime);
+                let temp3 = FieldElement::new(2 * y1.num % x1.prime, x1.prime);
                 s = (temp2 + self.a) / (temp3);
             }
         } else {
@@ -222,14 +238,16 @@ fn main() {
     let prime = 223;
     let a = FieldElement::new(0, prime);
     let b = FieldElement::new(7, prime);
-    let x1 = FieldElement::new(192, prime);
-    let y1 = FieldElement::new(105, prime);
+    let x1 = FieldElement::new(15, prime);
+    let y1 = FieldElement::new(86, prime);
     let x2 = FieldElement::new(17, prime);
     let y2 = FieldElement::new(56, prime);
     let p1 = Point::new(Some(x1), Some(y1), a, b);
     let p2 = Point::new(Some(x2), Some(y2), a, b);
-    let p = p1 + p2;
-    println!("{:?}", p);
+    //let p = p1 + p2;
+    //println!("{:?}", p);
+    //println!("{:?}", p1);
+    println!("{:?}", p1.multi(7));
 }
 
 
@@ -289,5 +307,24 @@ mod tests {
             b,
         );
         assert_eq!(expected_point, p1 + p2);
+    }
+
+    #[test]
+    fn test_scalar_multi() {
+        let prime = 223;
+        let a = FieldElement::new(0, prime);
+        let b = FieldElement::new(7, prime);
+        let x1 = FieldElement::new(15, prime);
+        let y1 = FieldElement::new(86, prime);
+        let p1 = Point::new(Some(x1), Some(y1), a, b);
+
+        let expected_point = Point::new(
+            None,
+            None,
+            a,
+            b,
+        );
+
+        assert_eq!(expected_point, p1.multi(7));
     }
 }
