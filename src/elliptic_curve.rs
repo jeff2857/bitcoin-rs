@@ -43,7 +43,10 @@ impl Point {
     }
 
     pub fn multi(&self, coefficient: BigInt) -> Self {
-        let mut coef = coefficient.clone();
+        // n is specified for s256
+        let n = BigInt::parse_bytes(b"fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16).unwrap();
+
+        let mut coef = coefficient.clone() % n;
         let mut current = self.clone();
         let mut result = Self::new(None, None, self.a.clone(), self.b.clone());
 
