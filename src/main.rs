@@ -1,48 +1,32 @@
 use std::rc::Rc;
 
 use num_bigint::BigInt;
-use num_traits::Pow;
 
 mod field_element;
 mod elliptic_curve;
+mod signature;
+mod s256field;
+mod s256point;
 
-use crate::field_element::FieldElement;
-use crate::elliptic_curve::Point;
-
-
-fn create_s256_field(num: BigInt) -> FieldElement {
-    let t = BigInt::from(2i32);
-    let p = t.clone().pow(256u32) - t.pow(32u32) - BigInt::from(977i32);
-
-    FieldElement::new(num, &p)
-}
-
-fn create_s256_point(x: Option<Rc<FieldElement>>, y: Option<Rc<FieldElement>>) -> Point {
-    let a = create_s256_field(BigInt::from(0i32));
-    let b = create_s256_field(BigInt::from(7i32));
-
-    Point::new(x, y, Rc::new(a), Rc::new(b))
-}
+use crate::s256field::S256Field;
+use crate::s256point::S256Point;
 
 
 fn main() {
-    let prime = BigInt::from(223i32);
-    let a = Rc::new(FieldElement::new(BigInt::from(0i32), &prime));
-    let b = Rc::new(FieldElement::new(BigInt::from(7i32), &prime));
-    let x1 = Rc::new(FieldElement::new(BigInt::from(15i32), &prime));
-    let y1 = Rc::new(FieldElement::new(BigInt::from(86i32), &prime));
-    let x2 = Rc::new(FieldElement::new(BigInt::from(17i32), &prime));
-    let y2 = Rc::new(FieldElement::new(BigInt::from(56i32), &prime));
-    let p1 = Point::new(Some(x1), Some(y1), a.clone(), b.clone());
-    let p2 = Point::new(Some(x2), Some(y2), a.clone(), b.clone());
+    //let x1 = Rc::new(S256Field::new(BigInt::from(15i32)));
+    //let y1 = Rc::new(S256Field::new(BigInt::from(86i32)));
+    //let x2 = Rc::new(S256Field::new(BigInt::from(17i32)));
+    //let y2 = Rc::new(S256Field::new(BigInt::from(56i32)));
+    //let p1 = S256Point::new(Some(x1), Some(y1));
+    //let p2 = S256Point::new(Some(x2), Some(y2));
 
     let gx = BigInt::parse_bytes(b"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", 16).unwrap();
     let gy = BigInt::parse_bytes(b"483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", 16).unwrap();
 
-    let x = Rc::new(create_s256_field(gx));
-    let y = Rc::new(create_s256_field(gy));
+    let x = Rc::new(S256Field::new(gx));
+    let y = Rc::new(S256Field::new(gy));
 
-    let g = create_s256_point(Some(x), Some(y));
+    let g = S256Point::new(Some(x), Some(y));
     println!("G: {:?}", &g);
 
     let n = BigInt::parse_bytes(b"fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16).unwrap();
@@ -57,7 +41,7 @@ mod tests {
 
     use num_bigint::BigInt;
 
-    use crate::{FieldElement, Point};
+    use crate::{field_element::FieldElement, elliptic_curve::Point};
 
     #[test]
     fn test_on_curve() {
