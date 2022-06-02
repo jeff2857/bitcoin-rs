@@ -12,5 +12,6 @@ Implemented features:
 - Elliptic Curve
 - Operations for Elliptic Curve over Finite Fields
 - SECP256K1 Field and Point
+- Elliptic Curve Digital Signature Algorithm
 - Signing with private key
 

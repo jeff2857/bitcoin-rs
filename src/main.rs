@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use num_bigint::BigInt;
 use private_key::PrivateKey;
+use signature::Signature;
 
 mod field_element;
 mod elliptic_curve;
@@ -13,6 +14,31 @@ mod private_key;
 use crate::s256field::S256Field;
 use crate::s256point::S256Point;
 
+
+fn validate_signature(z: &BigInt, signature: &Signature, pub_key: &S256Point) -> bool {
+    let gx = BigInt::parse_bytes(b"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", 16).unwrap();
+    let gy = BigInt::parse_bytes(b"483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", 16).unwrap();
+
+    let x = Rc::new(S256Field::new(gx));
+    let y = Rc::new(S256Field::new(gy));
+
+    let g = S256Point::new(Some(x), Some(y));
+
+    let n = BigInt::parse_bytes(b"fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16).unwrap();
+
+    let z = z.clone();
+    let s = signature.s.clone();
+    let r = signature.r.clone();
+
+    let u = z * s.clone().modpow(&(n.clone() - BigInt::from(2i32)), &n) % n.clone();
+    let v = r.clone() * s.modpow(&(n.clone() - BigInt::from(2i32)), &n) % n.clone();
+
+    let k_g = g.multi(u) + pub_key.multi(v);
+
+    let rx = &k_g.x.as_ref().unwrap().num;
+
+    return *rx == r;
+}
 
 fn main() {
     //let x1 = Rc::new(S256Field::new(BigInt::from(15i32)));
@@ -51,7 +77,7 @@ mod tests {
 
     use num_bigint::BigInt;
 
-    use crate::{field_element::FieldElement, elliptic_curve::Point};
+    use crate::{field_element::FieldElement, elliptic_curve::Point, s256field::S256Field, s256point::S256Point, signature::Signature, validate_signature};
 
     #[test]
     fn test_on_curve() {
@@ -135,4 +161,37 @@ mod tests {
 
         assert_eq!(expected_point, p1.multi(BigInt::from(7i32)));
     }
+
+    #[test]
+    fn test_signature_valid() {
+        let pub_x = Rc::new(S256Field::new(BigInt::parse_bytes(b"887387e452b8eacc4acfde10d9aaf7f6d9a0f975aabb10d006e4da568744d06c", 16).unwrap()));
+        let pub_y = Rc::new(S256Field::new(BigInt::parse_bytes(b"61de6d95231cd89026e286df3b6ae4a894a3378e393e93a0f45b666329a0ae34", 16).unwrap()));
+
+        let pub_key = S256Point::new(Some(pub_x), Some(pub_y));
+        let z = BigInt::parse_bytes(b"ec208baa0fc1c19f708a9ca96fdeff3ac3f230bb4a7ba4aede4942ad003c0f60", 16).unwrap();
+        let r = BigInt::parse_bytes(b"ac8d1c87e51d0d441be8b3dd5b05c8795b48875dffe00b7ffcfac23010d3a395", 16).unwrap();
+        let s = BigInt::parse_bytes(b"68342ceff8935ededd102dd876ffd6ba72d6a427a3edb13d26eb0781cb423c4", 16).unwrap();
+        let signature = Signature::new(r, s);
+
+        let is_valid = validate_signature(&z, &signature, &pub_key);
+
+        assert!(is_valid);
+    }
+
+    #[test]
+    fn test_signature_valid_2() {
+        let pub_x = Rc::new(S256Field::new(BigInt::parse_bytes(b"887387e452b8eacc4acfde10d9aaf7f6d9a0f975aabb10d006e4da568744d06c", 16).unwrap()));
+        let pub_y = Rc::new(S256Field::new(BigInt::parse_bytes(b"61de6d95231cd89026e286df3b6ae4a894a3378e393e93a0f45b666329a0ae34", 16).unwrap()));
+
+        let pub_key = S256Point::new(Some(pub_x), Some(pub_y));
+        let z = BigInt::parse_bytes(b"7c076ff316692a3d7eb3c3bb0f8b1488cf72e1afcd929e29307032997a838a3d", 16).unwrap();
+        let r = BigInt::parse_bytes(b"eff69ef2b1bd93a66ed5219add4fb51e11a840f404876325a1e8ffe0529a2c", 16).unwrap();
+        let s = BigInt::parse_bytes(b"c7207fee197d27c618aea621406f6bf5ef6fca38681d82b2f06fddbdce6feab6", 16).unwrap();
+        let signature = Signature::new(r, s);
+
+        let is_valid = validate_signature(&z, &signature, &pub_key);
+
+        assert!(is_valid);
+    }
+
 }
