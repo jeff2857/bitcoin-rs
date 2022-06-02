@@ -1,12 +1,14 @@
 use std::rc::Rc;
 
 use num_bigint::BigInt;
+use private_key::PrivateKey;
 
 mod field_element;
 mod elliptic_curve;
 mod signature;
 mod s256field;
 mod s256point;
+mod private_key;
 
 use crate::s256field::S256Field;
 use crate::s256point::S256Point;
@@ -20,18 +22,26 @@ fn main() {
     //let p1 = S256Point::new(Some(x1), Some(y1));
     //let p2 = S256Point::new(Some(x2), Some(y2));
 
-    let gx = BigInt::parse_bytes(b"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", 16).unwrap();
-    let gy = BigInt::parse_bytes(b"483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", 16).unwrap();
+    //let gx = BigInt::parse_bytes(b"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", 16).unwrap();
+    //let gy = BigInt::parse_bytes(b"483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", 16).unwrap();
 
-    let x = Rc::new(S256Field::new(gx));
-    let y = Rc::new(S256Field::new(gy));
+    //let x = Rc::new(S256Field::new(gx));
+    //let y = Rc::new(S256Field::new(gy));
 
-    let g = S256Point::new(Some(x), Some(y));
-    println!("G: {:?}", &g);
+    //let g = S256Point::new(Some(x), Some(y));
+    //println!("G: {:?}", &g);
 
-    let n = BigInt::parse_bytes(b"fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16).unwrap();
-    let n_g = g.multi(n);
-    println!("n * G: {:?}", &n_g);
+    //let n = BigInt::parse_bytes(b"fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16).unwrap();
+    //let n_g = g.multi(n);
+    //println!("n * G: {:?}", &n_g);
+
+    let secret = String::from("my secret");
+    let message = String::from("my message");
+
+    let private_key = PrivateKey::new(secret);
+    let signature = private_key.sign(message);
+
+    println!("{:?}", signature);
 }
 
 

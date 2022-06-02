@@ -1,11 +1,10 @@
-use std::{ops::Add, rc::Rc};
+use std::{ops::Add, rc::Rc, fmt::Debug};
 
 use num_bigint::BigInt;
 
 use crate::s256field::S256Field;
 
 
-#[derive(Debug)]
 #[derive(Clone)]
 pub struct S256Point {
     pub a: Rc<S256Field>,
@@ -136,5 +135,24 @@ impl Add for S256Point {
             x: Some(Rc::new(x3)),
             y: Some(Rc::new(y3)),
         }
+    }
+}
+
+impl Debug for S256Point {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let x = if let Some(x) = &self.x {
+            format!("{:0>64}", x.num.to_str_radix(16))
+        } else {
+            String::from("None")
+        };
+
+        let y = if let Some(y) = &self.y {
+            format!("{:0>64}", y.num.to_str_radix(16))
+        } else {
+            String::from("None")
+        };
+
+        let self_formatted = format!("S256Point {{ x: 0x{:0>64}, y: 0x{:0>64} }}", x, y);
+        write!(f, "{}", self_formatted)
     }
 }

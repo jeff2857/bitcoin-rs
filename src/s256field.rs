@@ -1,10 +1,9 @@
-use std::ops::{Add, Sub, Neg, Mul, Div};
+use std::{ops::{Add, Sub, Neg, Mul, Div}, fmt::Debug};
 
 use num_bigint::BigInt;
 
 
 #[derive(Clone)]
-#[derive(Debug)]
 pub struct S256Field {
     pub num: BigInt,
     pub prime: BigInt,
@@ -114,5 +113,12 @@ impl S256Field {
             num: self.num.modpow(&expo, &self.prime),
             prime: self.prime.clone(),
         }
+    }
+}
+
+impl Debug for S256Field {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let self_formatted = format!("S256Field {{ num: 0x{:0>64} }}", self.num.to_str_radix(16));
+        write!(f, "{}", self_formatted)
     }
 }
