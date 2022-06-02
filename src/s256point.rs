@@ -67,6 +67,31 @@ impl S256Point {
     }
 }
 
+impl S256Point {
+    pub fn sec(&self) -> Vec<u8> {
+        let mut s: Vec<u8> = vec![b'\x04'];
+        let mut x_bytes = self.x.as_ref().unwrap().num.to_bytes_be().1;
+        let mut y_bytes = self.y.as_ref().unwrap().num.to_bytes_be().1;
+        
+        if x_bytes.len() < 32 {
+            for _ in 0..(32 - x_bytes.len()) {
+                x_bytes.insert(0, b'\x00');
+            }
+        }
+
+        if y_bytes.len() < 32 {
+            for _ in 0..(32 - y_bytes.len()) {
+                y_bytes.insert(0, b'\x00');
+            }
+        }
+
+        s.extend_from_slice(&x_bytes);
+        s.extend_from_slice(&y_bytes);
+
+        s
+    }
+}
+
 impl PartialEq for S256Point {
     fn eq(&self, other: &Self) -> bool {
         self.x == other.x && self.y == other.y && self.a == other.a && self.b == other.b

@@ -1,4 +1,7 @@
+use num_bigint::BigInt;
 use private_key::PrivateKey;
+
+use crate::utils::u8_slice_to_string;
 
 mod field_element;
 mod elliptic_curve;
@@ -6,6 +9,7 @@ mod signature;
 mod s256field;
 mod s256point;
 mod private_key;
+mod utils;
 
 
 fn main() {
@@ -29,13 +33,17 @@ fn main() {
     //let n_g = g.multi(n);
     //println!("n * G: {:?}", &n_g);
 
-    let secret = String::from("my secret");
+    //let secret = BigInt::from(5000i32);
+    let secret = BigInt::parse_bytes(b"deadbeef12345", 16).unwrap();
     let message = String::from("my message");
 
     let private_key = PrivateKey::new(secret);
-    let signature = private_key.sign(message);
+    //let signature = private_key.sign(message);
 
-    println!("{:?}", signature);
+    //println!("{:?}", signature);
+
+    let sec_pub_key = private_key.get_pub_key().sec();
+    println!("{}", u8_slice_to_string(&sec_pub_key));
 }
 
 
@@ -45,7 +53,7 @@ mod tests {
 
     use num_bigint::BigInt;
 
-    use crate::{field_element::FieldElement, elliptic_curve::Point, s256field::S256Field, s256point::S256Point, signature::Signature};
+    use crate::{field_element::FieldElement, elliptic_curve::Point, s256field::S256Field, s256point::S256Point, signature::Signature, private_key::PrivateKey, utils::u8_slice_to_string};
 
     #[test]
     fn test_on_curve() {
@@ -158,4 +166,26 @@ mod tests {
         assert!(signature.is_valid(&z, &pub_key));
     }
 
+    #[test]
+    fn test_sec_format() {
+        let secret = BigInt::parse_bytes(b"deadbeef12345", 16).unwrap();
+        let private_key = PrivateKey::new(secret);
+
+        let sec_pub_key = private_key.get_pub_key().sec();
+
+        assert_eq!(
+            String::from("04d90cd625ee87dd38656dd95cf79f65f60f7273b67d3096e68bd81e4f5342691f842efa762fd59961d0e99803c61edba8b3e3f7dc3a341836f97733aebf987121"),
+            u8_slice_to_string(&sec_pub_key)
+        );
+
+        let secret = BigInt::from(5000i32);
+        let private_key = PrivateKey::new(secret);
+
+        let sec_pub_key = private_key.get_pub_key().sec();
+
+        assert_eq!(
+            String::from("04ffe558e388852f0120e46af2d1b370f85854a8eb0841811ece0e3e03d282d57c315dc72890a4f10a1481c031b03b351b0dc79901ca18a00cf009dbdb157a1d10"),
+            u8_slice_to_string(&sec_pub_key)
+        );
+    }
 }

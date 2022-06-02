@@ -10,12 +10,11 @@ use crate::{signature::Signature, s256point::S256Point, s256field::S256Field};
 type HmacSha256 = Hmac<Sha256>;
 
 pub struct PrivateKey {
-    pub secret: String,
-
+    pub secret: BigInt,
 }
 
 impl PrivateKey {
-    pub fn new(secret: String) -> Self {
+    pub fn new(secret: BigInt) -> Self {
         Self {
             secret,
         }
@@ -46,7 +45,7 @@ impl PrivateKey {
         let r = g.multi(*k.clone()).x.unwrap().num.clone();
         let k_inv = k.modpow(&(&n - &BigInt::from(2i32)), &n);
 
-        let secret_hashed = self.hash256(self.secret.as_bytes());
+        let secret_hashed = self.hash256(&self.secret.to_bytes_be().1);
         let secret = BigInt::from_bytes_be(num_bigint::Sign::Plus, &secret_hashed);
 
         let mut s = (z + r.clone() * secret) * k_inv % n.clone();
@@ -56,6 +55,20 @@ impl PrivateKey {
         }
 
         Signature::new(r, s)
+    }
+
+    pub fn get_pub_key(&self) -> S256Point {
+        let gx = BigInt::parse_bytes(b"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", 16).unwrap();
+        let gy = BigInt::parse_bytes(b"483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", 16).unwrap();
+
+        let x = Rc::new(S256Field::new(gx));
+        let y = Rc::new(S256Field::new(gy));
+
+        let g = S256Point::new(Some(x), Some(y));
+
+        let pub_point = g.multi(self.secret.clone());
+
+        pub_point
     }
 
     /// two rounds of sha256
@@ -93,7 +106,7 @@ impl PrivateKey {
             }
         }
 
-        let mut secret_bytes = self.secret.as_bytes().to_owned();
+        let mut secret_bytes = self.secret.to_bytes_be().1;
         // pre-complete with b'\x00' to make it's length at 32
         if secret_bytes.len() < 32 {
             for _ in 0..(32 - secret_bytes.len()) {
