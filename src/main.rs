@@ -1,8 +1,4 @@
-use std::rc::Rc;
-
-use num_bigint::BigInt;
 use private_key::PrivateKey;
-use signature::Signature;
 
 mod field_element;
 mod elliptic_curve;
@@ -11,34 +7,6 @@ mod s256field;
 mod s256point;
 mod private_key;
 
-use crate::s256field::S256Field;
-use crate::s256point::S256Point;
-
-
-fn validate_signature(z: &BigInt, signature: &Signature, pub_key: &S256Point) -> bool {
-    let gx = BigInt::parse_bytes(b"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", 16).unwrap();
-    let gy = BigInt::parse_bytes(b"483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", 16).unwrap();
-
-    let x = Rc::new(S256Field::new(gx));
-    let y = Rc::new(S256Field::new(gy));
-
-    let g = S256Point::new(Some(x), Some(y));
-
-    let n = BigInt::parse_bytes(b"fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16).unwrap();
-
-    let z = z.clone();
-    let s = signature.s.clone();
-    let r = signature.r.clone();
-
-    let u = z * s.clone().modpow(&(n.clone() - BigInt::from(2i32)), &n) % n.clone();
-    let v = r.clone() * s.modpow(&(n.clone() - BigInt::from(2i32)), &n) % n.clone();
-
-    let k_g = g.multi(u) + pub_key.multi(v);
-
-    let rx = &k_g.x.as_ref().unwrap().num;
-
-    return *rx == r;
-}
 
 fn main() {
     //let x1 = Rc::new(S256Field::new(BigInt::from(15i32)));
@@ -77,7 +45,7 @@ mod tests {
 
     use num_bigint::BigInt;
 
-    use crate::{field_element::FieldElement, elliptic_curve::Point, s256field::S256Field, s256point::S256Point, signature::Signature, validate_signature};
+    use crate::{field_element::FieldElement, elliptic_curve::Point, s256field::S256Field, s256point::S256Point, signature::Signature};
 
     #[test]
     fn test_on_curve() {
@@ -173,9 +141,7 @@ mod tests {
         let s = BigInt::parse_bytes(b"68342ceff8935ededd102dd876ffd6ba72d6a427a3edb13d26eb0781cb423c4", 16).unwrap();
         let signature = Signature::new(r, s);
 
-        let is_valid = validate_signature(&z, &signature, &pub_key);
-
-        assert!(is_valid);
+        assert!(signature.is_valid(&z, &pub_key));
     }
 
     #[test]
@@ -189,9 +155,7 @@ mod tests {
         let s = BigInt::parse_bytes(b"c7207fee197d27c618aea621406f6bf5ef6fca38681d82b2f06fddbdce6feab6", 16).unwrap();
         let signature = Signature::new(r, s);
 
-        let is_valid = validate_signature(&z, &signature, &pub_key);
-
-        assert!(is_valid);
+        assert!(signature.is_valid(&z, &pub_key));
     }
 
 }
