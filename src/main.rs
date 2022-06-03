@@ -1,8 +1,9 @@
 use num_bigint::BigInt;
 use private_key::PrivateKey;
 use signature::Signature;
+use utils::encode_base58;
 
-use crate::utils::u8_slice_to_string;
+use crate::utils::{u8_slice_to_string, u8_slice_base58_to_string};
 
 mod field_element;
 mod elliptic_curve;
@@ -42,6 +43,10 @@ fn main() {
     //let signature = private_key.sign(message);
 
     //println!("{:?}", signature);
+
+    let a = b"7c076ff316692a3d7eb3c3bb0f8b1488cf72e1afcd929e29307032997a838a3d";
+    let a_base58 = encode_base58(a);
+    println!("{:x?}", u8_slice_base58_to_string(&a_base58));
 }
 
 
@@ -51,7 +56,7 @@ mod tests {
 
     use num_bigint::BigInt;
 
-    use crate::{field_element::FieldElement, elliptic_curve::Point, s256field::S256Field, s256point::{S256Point, self}, signature::Signature, private_key::PrivateKey, utils::u8_slice_to_string};
+    use crate::{field_element::FieldElement, elliptic_curve::Point, s256field::S256Field, s256point::{S256Point, self}, signature::Signature, private_key::PrivateKey, utils::{u8_slice_to_string, u8_slice_base58_to_string, encode_base58}};
 
     #[test]
     fn test_on_curve() {
@@ -213,6 +218,33 @@ mod tests {
         assert_eq!(
             String::from("3045022037206a0610995c58074999cb9767b87af4c4978db68c06e8e6e81d282047a7c60221008ca63759c1157ebeaec0d03cecca119fc9a75bf8e6d0fa65c841c8e2738cdaec"),
             u8_slice_to_string(&der),
+        );
+    }
+
+    #[test]
+    fn test_encode_base58() {
+        let a = b"7c076ff316692a3d7eb3c3bb0f8b1488cf72e1afcd929e29307032997a838a3d";
+        let a_base58 = encode_base58(a);
+
+        assert_eq!(
+            String::from("9MA8fRQrT4u8Zj8ZRd6MAiiyaxb2Y1CMpvVkHQu5hVM6"),
+            u8_slice_base58_to_string(&a_base58),
+        );
+
+        let a = b"eff69ef2b1bd93a66ed5219add4fb51e11a840f404876325a1e8ffe0529a2c";
+        let a_base58 = encode_base58(a);
+
+        assert_eq!(
+            String::from("4fE3H2E6XMp4SsxtwinF7w9a34ooUrwWe4WsW1458Pd"),
+            u8_slice_base58_to_string(&a_base58),
+        );
+
+        let a = b"c7207fee197d27c618aea621406f6bf5ef6fca38681d82b2f06fddbdce6feab6";
+        let a_base58 = encode_base58(a);
+
+        assert_eq!(
+            String::from("EQJsjkd6JaGwxrjEhfeqPenqHwrBmPQZjJGNSCHBkcF7"),
+            u8_slice_base58_to_string(&a_base58),
         );
     }
 }
