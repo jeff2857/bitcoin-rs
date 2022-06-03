@@ -44,6 +44,49 @@ impl S256Point {
         }
     }
 
+    pub fn parse(sec_bin: Vec<u8>) -> Self {
+        if sec_bin[0] == 4 {
+            let x = BigInt::from_bytes_be(num_bigint::Sign::Plus, &sec_bin[1..33]);
+            let y = BigInt::from_bytes_be(num_bigint::Sign::Plus, &sec_bin[33..65]);
+
+            let px = Rc::new(S256Field::new(x));
+            let py = Rc::new(S256Field::new(y));
+            return Self::new(Some(px), Some(py));
+        }
+
+        let is_even = sec_bin[0]== 2;
+        let x = S256Field::new(BigInt::from_bytes_be(num_bigint::Sign::Plus, &sec_bin[1..]));
+        let b = S256Field::new(BigInt::from(7i32));
+        let alpha = x.pow(&BigInt::from(3i32)) + b;
+        let beta = alpha.sqrt();
+
+        let t = BigInt::from(2i32);
+        let p = t.clone().pow(256u32) - t.pow(32u32) - BigInt::from(977i32);
+
+        let even_beta;
+        let odd_beta;
+
+        if beta.num.clone() % BigInt::from(2i32) == BigInt::from(0i32) {
+            even_beta = beta.clone();
+            odd_beta = S256Field::new(p - beta.num.clone());
+        } else {
+            even_beta = S256Field::new(p - beta.num.clone());
+            odd_beta = beta;
+        }
+
+        if is_even {
+            let px = Rc::new(x);
+            let py = Rc::new(even_beta);
+            return Self::new(Some(px), Some(py));
+        } else {
+            let px = Rc::new(x);
+            let py = Rc::new(odd_beta);
+            return Self::new(Some(px), Some(py));
+        }
+    }
+}
+
+impl S256Point {
     pub fn multi(&self, coefficient: BigInt) -> Self {
         // n is specified for s256
         let n = BigInt::parse_bytes(b"fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16).unwrap();
@@ -65,11 +108,10 @@ impl S256Point {
 
         result
     }
-}
 
-impl S256Point {
-    pub fn sec(&self) -> Vec<u8> {
-        let mut s: Vec<u8> = vec![b'\x04'];
+    /// returns the binary version of the SEC format
+    pub fn sec(&self, compressed: bool) -> Vec<u8> {
+        let mut s: Vec<u8> = Vec::new();
         let mut x_bytes = self.x.as_ref().unwrap().num.to_bytes_be().1;
         let mut y_bytes = self.y.as_ref().unwrap().num.to_bytes_be().1;
         
@@ -85,8 +127,18 @@ impl S256Point {
             }
         }
 
-        s.extend_from_slice(&x_bytes);
-        s.extend_from_slice(&y_bytes);
+        if compressed {
+            if self.y.as_ref().unwrap().num.clone() % BigInt::from(2i32) == BigInt::from(0i32) {
+                s.push(b'\x02');
+            } else {
+                s.push(b'\x03');
+            }
+            s.extend_from_slice(&x_bytes);
+        } else {
+            s.push(b'\x04');
+            s.extend_from_slice(&x_bytes);
+            s.extend_from_slice(&y_bytes);
+        }
 
         s
     }

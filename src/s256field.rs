@@ -9,6 +9,46 @@ pub struct S256Field {
     pub prime: BigInt,
 }
 
+impl S256Field {
+    pub fn new(num: BigInt) -> Self {
+        let t = BigInt::from(2i32);
+        let p = t.clone().pow(256u32) - t.pow(32u32) - BigInt::from(977i32);
+
+        if num >= p || num < BigInt::from(0i32) {
+            panic!("Num {} not in field range 0 to {}", num, &p);
+        }
+
+        Self {
+            num,
+            prime: p,
+        }
+    }
+
+}
+
+impl S256Field {
+     pub fn pow(&self, exponent: &BigInt) -> Self {
+        let mut expo = BigInt::from(exponent.clone());
+        if exponent < &BigInt::from(0i32) {
+            expo = &self.prime - BigInt::from(1u32) + expo;
+        }
+
+        Self {
+            num: self.num.modpow(&expo, &self.prime),
+            prime: self.prime.clone(),
+        }
+    }
+   
+    pub fn sqrt(&self) -> Self {
+        let temp = (self.prime.clone() + BigInt::from(1i32)) / BigInt::from(4i32);
+
+        Self {
+            num: self.pow(&temp).num,
+            prime: self.prime.clone(),
+        }
+    }
+}
+
 impl PartialEq for S256Field {
     fn eq(&self, other: &Self) -> bool {
         self.num == other.num && self.prime == other.prime
@@ -84,34 +124,6 @@ impl Div for S256Field {
         Self {
             num: (temp * self.clone()).num,
             prime: self.prime,
-        }
-    }
-}
-
-impl S256Field {
-    pub fn new(num: BigInt) -> Self {
-        let t = BigInt::from(2i32);
-        let p = t.clone().pow(256u32) - t.pow(32u32) - BigInt::from(977i32);
-
-        if num >= p || num < BigInt::from(0i32) {
-            panic!("Num {} not in field range 0 to {}", num, &p);
-        }
-
-        Self {
-            num,
-            prime: p,
-        }
-    }
-
-    pub fn pow(&self, exponent: &BigInt) -> Self {
-        let mut expo = BigInt::from(exponent.clone());
-        if exponent < &BigInt::from(0i32) {
-            expo = &self.prime - BigInt::from(1u32) + expo;
-        }
-
-        Self {
-            num: self.num.modpow(&expo, &self.prime),
-            prime: self.prime.clone(),
         }
     }
 }
