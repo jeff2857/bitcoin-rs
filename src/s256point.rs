@@ -2,7 +2,9 @@ use std::{ops::Add, rc::Rc, fmt::Debug};
 
 use num_bigint::BigInt;
 
-use crate::s256field::S256Field;
+use hex::ToHex;
+
+use crate::{s256field::S256Field, utils::{hash160, encode_base58_checksum, u8_slice_to_string}};
 
 
 #[derive(Clone)]
@@ -141,6 +143,26 @@ impl S256Point {
         }
 
         s
+    }
+
+    pub fn hash160(&self, compressed: bool) -> Vec<u8> {
+        let h = hash160(&self.sec(compressed));
+        h
+    }
+
+    pub fn address(&self, compressed: bool, testnet: bool) -> Vec<u8> {
+        let h160 = self.hash160(compressed);
+        let prefix;
+        if testnet {
+            prefix = b'\x6f';
+        } else {
+            prefix = b'\x00';
+        }
+
+        let mut s: Vec<u8> = vec![prefix];
+        s.extend_from_slice(&h160);
+
+        encode_base58_checksum(&s)
     }
 }
 

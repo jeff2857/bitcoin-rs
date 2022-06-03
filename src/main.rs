@@ -1,4 +1,5 @@
 use num_bigint::BigInt;
+use hex::ToHex;
 use private_key::PrivateKey;
 use signature::Signature;
 use utils::encode_base58;
@@ -36,17 +37,18 @@ fn main() {
     //println!("n * G: {:?}", &n_g);
 
     //let secret = BigInt::from(5000i32);
-    let secret = BigInt::parse_bytes(b"deadbeef12345", 16).unwrap();
-    let message = String::from("my message");
+    let secret = BigInt::from(5002i32);
 
     let private_key = PrivateKey::new(secret);
     //let signature = private_key.sign(message);
 
     //println!("{:?}", signature);
 
-    let a = b"7c076ff316692a3d7eb3c3bb0f8b1488cf72e1afcd929e29307032997a838a3d";
-    let a_base58 = encode_base58(a);
-    println!("{:x?}", u8_slice_base58_to_string(&a_base58));
+    let pub_key = private_key.get_pub_key();
+
+    let address = pub_key.address(true, false);
+    
+    println!("{}", u8_slice_base58_to_string(&address));
 }
 
 
@@ -55,6 +57,8 @@ mod tests {
     use std::rc::Rc;
 
     use num_bigint::BigInt;
+
+    use hex::ToHex;
 
     use crate::{field_element::FieldElement, elliptic_curve::Point, s256field::S256Field, s256point::{S256Point, self}, signature::Signature, private_key::PrivateKey, utils::{u8_slice_to_string, u8_slice_base58_to_string, encode_base58}};
 
@@ -201,7 +205,9 @@ mod tests {
 
         let sec_pub_key = (&pub_key).sec(true);
 
-        let parsed_pub_key = s256point::S256Point::parse(sec_pub_key);
+        let sec = sec_pub_key.encode_hex::<String>();
+        let sec = hex::decode(sec).unwrap();
+        let parsed_pub_key = s256point::S256Point::parse(sec);
 
         assert_eq!(pub_key, parsed_pub_key);
     }
@@ -223,28 +229,61 @@ mod tests {
 
     #[test]
     fn test_encode_base58() {
-        let a = b"7c076ff316692a3d7eb3c3bb0f8b1488cf72e1afcd929e29307032997a838a3d";
-        let a_base58 = encode_base58(a);
+        let a = String::from("7c076ff316692a3d7eb3c3bb0f8b1488cf72e1afcd929e29307032997a838a3d");
+        let a_base58 = encode_base58(&hex::decode(a).unwrap());
 
         assert_eq!(
             String::from("9MA8fRQrT4u8Zj8ZRd6MAiiyaxb2Y1CMpvVkHQu5hVM6"),
             u8_slice_base58_to_string(&a_base58),
         );
 
-        let a = b"eff69ef2b1bd93a66ed5219add4fb51e11a840f404876325a1e8ffe0529a2c";
-        let a_base58 = encode_base58(a);
+        let a = String::from("eff69ef2b1bd93a66ed5219add4fb51e11a840f404876325a1e8ffe0529a2c");
+        let a_base58 = encode_base58(&hex::decode(a).unwrap());
 
         assert_eq!(
             String::from("4fE3H2E6XMp4SsxtwinF7w9a34ooUrwWe4WsW1458Pd"),
             u8_slice_base58_to_string(&a_base58),
         );
 
-        let a = b"c7207fee197d27c618aea621406f6bf5ef6fca38681d82b2f06fddbdce6feab6";
-        let a_base58 = encode_base58(a);
+        let a = String::from("c7207fee197d27c618aea621406f6bf5ef6fca38681d82b2f06fddbdce6feab6");
+        let a_base58 = encode_base58(&hex::decode(a).unwrap());
 
         assert_eq!(
             String::from("EQJsjkd6JaGwxrjEhfeqPenqHwrBmPQZjJGNSCHBkcF7"),
             u8_slice_base58_to_string(&a_base58),
+        );
+    }
+
+    #[test]
+    fn test_address() {
+        let secret = BigInt::parse_bytes(b"12345deadbeef", 16).unwrap();
+        let private_key = PrivateKey::new(secret);
+        let pub_key = private_key.get_pub_key();
+        let address = pub_key.address(true, false);
+     
+        assert_eq!(
+            String::from("1F1Pn2y6pDb68E5nYJJeba4TLg2U7B6KF1"),
+            u8_slice_base58_to_string(&address),
+        );
+
+        let secret = BigInt::from(5002i32);
+        let private_key = PrivateKey::new(secret);
+        let pub_key = private_key.get_pub_key();
+        let address = pub_key.address(false, true);
+     
+        assert_eq!(
+            String::from("mmTPbXQFxboEtNRkwfh6K51jvdtHLxGeMA"),
+            u8_slice_base58_to_string(&address),
+        );
+
+        let secret = BigInt::from(2020i32).pow(5);
+        let private_key = PrivateKey::new(secret);
+        let pub_key = private_key.get_pub_key();
+        let address = pub_key.address(true, true);
+     
+        assert_eq!(
+            String::from("mopVkxp8UhXqRYbCYJsbeE1h1fiF64jcoH"),
+            u8_slice_base58_to_string(&address),
         );
     }
 }
