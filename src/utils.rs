@@ -55,7 +55,6 @@ pub fn encode_base58(s: &[u8]) -> Vec<u8> {
 
 pub fn encode_base58_checksum(b: &[u8]) -> Vec<u8> {
     let mut b = b.to_owned();
-    let a = hash256(&b);
     b.extend_from_slice(&(hash256(&b)[..4]));
     encode_base58(&b)
 }

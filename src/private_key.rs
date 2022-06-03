@@ -3,8 +3,9 @@ use std::rc::Rc;
 use hmac::{Hmac, Mac};
 use num_bigint::BigInt;
 use sha2::{Sha256, Digest};
+use hex::ToHex;
 
-use crate::{signature::Signature, s256point::S256Point, s256field::S256Field};
+use crate::{signature::Signature, s256point::S256Point, s256field::S256Field, utils::encode_base58_checksum};
 
 
 type HmacSha256 = Hmac<Sha256>;
@@ -158,5 +159,29 @@ impl PrivateKey {
             mac.update(&v[..]);
             v = mac.finalize().into_bytes();
         }
+    }
+
+    pub fn wif(&self, compressed: bool, testnet: bool) -> Vec<u8> {
+        let mut secret_bytes = self.secret.to_bytes_be().1;
+        if secret_bytes.len() < 32 {
+            for _ in 0..(32 - secret_bytes.len()) {
+                secret_bytes.insert(0, b'\x00');
+            }
+        }
+
+        let prefix;
+        if testnet {
+            prefix = b'\xef';
+        } else {
+            prefix = b'\x80';
+        }
+
+        let mut s: Vec<u8> = vec![prefix];
+        s.extend_from_slice(&secret_bytes);
+        if compressed {
+            s.push(b'\x01');
+        }
+
+        encode_base58_checksum(&s)
     }
 }

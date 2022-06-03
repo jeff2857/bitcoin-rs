@@ -37,18 +37,16 @@ fn main() {
     //println!("n * G: {:?}", &n_g);
 
     //let secret = BigInt::from(5000i32);
-    let secret = BigInt::from(5002i32);
+    let secret = BigInt::from(5003i32);
 
     let private_key = PrivateKey::new(secret);
     //let signature = private_key.sign(message);
 
     //println!("{:?}", signature);
 
-    let pub_key = private_key.get_pub_key();
-
-    let address = pub_key.address(true, false);
+    let wif = private_key.wif(true, true);
     
-    println!("{}", u8_slice_base58_to_string(&address));
+    println!("{}", u8_slice_base58_to_string(&wif));
 }
 
 
@@ -284,6 +282,36 @@ mod tests {
         assert_eq!(
             String::from("mopVkxp8UhXqRYbCYJsbeE1h1fiF64jcoH"),
             u8_slice_base58_to_string(&address),
+        );
+    }
+
+    #[test]
+    fn test_wif() {
+        let secret = BigInt::from(5003i32);
+        let private_key = PrivateKey::new(secret);
+        let wif = private_key.wif(true, true);
+
+        assert_eq!(
+            String::from("cMahea7zqjxrtgAbB7LSGbcQUr1uX1ojuat9jZodMN8rFTv2sfUK"),
+            u8_slice_base58_to_string(&wif),
+        );
+
+        let secret = BigInt::from(2021i32).pow(5);
+        let private_key = PrivateKey::new(secret);
+        let wif = private_key.wif(false, true);
+
+        assert_eq!(
+            String::from("91avARGdfge8E4tZfYLoxeJ5sGBdNJQH4kvjpWAxgzczjbCwxic"),
+            u8_slice_base58_to_string(&wif),
+        );
+
+        let secret = BigInt::parse_bytes(b"54321deadbeef", 16).unwrap();
+        let private_key = PrivateKey::new(secret);
+        let wif = private_key.wif(true, false);
+
+        assert_eq!(
+            String::from("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgiuQJv1h8Ytr2S53a"),
+            u8_slice_base58_to_string(&wif),
         );
     }
 }
