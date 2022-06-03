@@ -1,5 +1,6 @@
 use num_bigint::BigInt;
 use private_key::PrivateKey;
+use signature::Signature;
 
 use crate::utils::u8_slice_to_string;
 
@@ -41,15 +42,6 @@ fn main() {
     //let signature = private_key.sign(message);
 
     //println!("{:?}", signature);
-
-    let pub_key = private_key.get_pub_key();
-    println!("pub key: {:?}", &pub_key);
-
-    let sec_pub_key = pub_key.sec(true);
-    println!("{}", u8_slice_to_string(&sec_pub_key));
-
-    let parsed_pub_key = s256point::S256Point::parse(sec_pub_key);
-    println!("parsed pub key: {:?}", &parsed_pub_key);
 }
 
 
@@ -207,5 +199,20 @@ mod tests {
         let parsed_pub_key = s256point::S256Point::parse(sec_pub_key);
 
         assert_eq!(pub_key, parsed_pub_key);
+    }
+
+    #[test]
+    fn test_der_format() {
+        let signature = Signature::new(
+            BigInt::parse_bytes(b"37206a0610995c58074999cb9767b87af4c4978db68c06e8e6e81d282047a7c6", 16).unwrap(),
+            BigInt::parse_bytes(b"8ca63759c1157ebeaec0d03cecca119fc9a75bf8e6d0fa65c841c8e2738cdaec", 16).unwrap(),
+        );
+
+        let der = signature.der();
+
+        assert_eq!(
+            String::from("3045022037206a0610995c58074999cb9767b87af4c4978db68c06e8e6e81d282047a7c60221008ca63759c1157ebeaec0d03cecca119fc9a75bf8e6d0fa65c841c8e2738cdaec"),
+            u8_slice_to_string(&der),
+        );
     }
 }

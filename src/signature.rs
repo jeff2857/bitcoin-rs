@@ -44,6 +44,53 @@ impl Signature {
 
         return *rx == r;
     }
+
+    /// DER (Distinguished Encoding Rules) format
+    pub fn der(&self) -> Vec<u8> {
+        let mut rbin = self.r.to_bytes_be().1;
+        // remove all null bytes at the beginning
+        let mut lstrip = -1;
+        for i in 0..rbin.len() {
+            if rbin[i] != b'\x00' {
+                lstrip = i as i32;
+                break;
+            }
+        }
+        if lstrip > 0 {
+            rbin = rbin[(lstrip as usize)..rbin.len()].to_owned();
+        }
+
+        if rbin[0] & 0x80 != 0 {
+            rbin.insert(0, b'\x00');
+        }
+
+        let mut result: Vec<u8> = vec![2, rbin.len() as u8];
+        result.extend_from_slice(&rbin);
+
+        let mut sbin = self.s.to_bytes_be().1;
+        // remove all null bytes at the beginning
+        let mut lstrip = -1;
+        for i in 0..sbin.len() {
+            if sbin[i] != b'\x00' {
+                lstrip = i as i32;
+                break;
+            }
+        }
+        if lstrip > 0 {
+            sbin = sbin[(lstrip as usize)..sbin.len()].to_owned();
+        }
+
+        if sbin[0] & 0x80 != 0 {
+            sbin.insert(0, b'\x00');
+        }
+
+        result.extend_from_slice(&[2, sbin.len() as u8]);
+        result.extend_from_slice(&sbin);
+        let mut d: Vec<u8> = vec![0x30, result.len() as u8];
+        d.extend_from_slice(&result);
+
+        d
+    }
 }
 
 impl Debug for Signature {
