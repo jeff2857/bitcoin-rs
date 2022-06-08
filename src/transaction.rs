@@ -3,7 +3,7 @@ use std::fmt::{Display, write};
 use num_bigint::BigInt;
 use hex::ToHex;
 
-use crate::utils::{hash256, int_to_little_endian, encode_varint, little_endian_to_int};
+use crate::utils::{hash256, int_to_little_endian, encode_varint, little_endian_to_int, read_varint};
 
 
 pub struct Tx {
@@ -34,7 +34,7 @@ impl Tx {
         bytes_read += 4;
 
         // inputs
-        let tx_ins = TxIn::parse(&serialization[bytes_read..], &mut bytes_read);
+        let tx_ins = TxIn::parse(&serialization, &mut bytes_read);
         println!("{}", &bytes_read);
 
         // todo: parse script
@@ -128,7 +128,12 @@ pub struct TxIn {
 }
 
 impl TxIn {
-    pub fn new(prev_tx: Vec<u8>, prev_index: BigInt, script_sig: Vec<u8>, sequence: BigInt) -> Self {
+    pub fn new(prev_tx: Vec<u8>, prev_index: BigInt, script_sig: Option<Vec<u8>>, sequence: BigInt) -> Self {
+        let script_sig = match script_sig {
+            Some(sig) => sig,
+            None => vec![],
+        };
+
         Self {
             prev_tx,
             prev_index,
@@ -138,7 +143,45 @@ impl TxIn {
     }
 
     pub fn parse(serialization: &[u8], bytes_read: &mut usize) -> Vec<Self> {
-        vec![]
+        let (num, b_read) = read_varint(&serialization[*bytes_read..]);
+        *bytes_read += b_read;
+
+        let num = num.to_u32_digits().1[0];
+        let mut tx_ins: Vec<Self> = vec![];
+
+        for _ in 0..num  {
+            // previous transaction id, 32 bytes
+            let prev_tx_id = &serialization[*bytes_read..(*bytes_read + 32)];
+            *bytes_read += 32;
+
+            // previous transaction index, 4 bytes
+            let prev_index = &serialization[*bytes_read..(*bytes_read + 4)];
+            let prev_index = BigInt::from_bytes_le(num_bigint::Sign::Plus, prev_index);
+            *bytes_read += 4;
+
+            // script sig, variant length, preceded by a varint
+            let (script_sig_len, b_read) = read_varint(&serialization[*bytes_read..]);
+            *bytes_read += b_read;
+            let script_sig_len = script_sig_len.to_u32_digits().1[0] as usize;
+            let script_sig = &serialization[*bytes_read..(*bytes_read + script_sig_len)];
+            *bytes_read += script_sig_len;
+
+            // sequence, 4 bytes
+            let sequence = &serialization[*bytes_read..(*bytes_read + 4)];
+            let sequence = BigInt::from_bytes_le(num_bigint::Sign::Plus, sequence);
+            *bytes_read += 4;
+
+            let tx_in = Self {
+                prev_tx: prev_tx_id.to_owned(),
+                prev_index,
+                script_sig: script_sig.to_owned(),
+                sequence,
+            };
+
+            tx_ins.push(tx_in);
+        }
+        
+        tx_ins
     }
 }
 
