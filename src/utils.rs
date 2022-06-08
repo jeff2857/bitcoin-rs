@@ -86,10 +86,10 @@ pub fn hash160(s: &[u8]) -> Vec<u8> {
 /// convert BigInt to little-endian bytes
 pub fn int_to_little_endian(n: &BigInt, len: usize) -> Vec<u8> {
     let n = n.clone();
-    let mut n_bytes = n.to_signed_bytes_be();
+    let mut n_bytes = n.to_bytes_le().1;
     if n_bytes.len() < len {
         for _ in 0..(len - n_bytes.len()) {
-            n_bytes.insert(0, b'\x00');
+            n_bytes.push(b'\x00');
         }
     }
 

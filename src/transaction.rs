@@ -15,7 +15,6 @@ pub struct Tx {
 }
 
 impl Tx {
-    // todo
     pub fn new(version: BigInt, tx_ins: Vec<TxIn>, tx_outs: Vec<TxOut>, locktime: BigInt, testnet: bool) -> Self {
         Self {
             version,
@@ -71,6 +70,20 @@ impl Tx {
         result.extend_from_slice(&int_to_little_endian(&self.locktime, 4));
 
         result
+    }
+
+    pub fn fee(&self) -> BigInt {
+        let mut input_sum = BigInt::from(0i32);
+        let mut output_sum = BigInt::from(0i32);
+
+        for tx_in in &self.tx_ins {
+            input_sum = input_sum + tx_in.value(self.testnet);
+        }
+        for tx_out in &self.tx_outs {
+            output_sum = output_sum + tx_out.amount.clone();
+        }
+
+        input_sum - output_sum
     }
 }
 
@@ -133,6 +146,10 @@ impl TxIn {
     }
 
     // todo: fetch transaction from web and get amout
+
+    pub fn value(&self, testnet: bool) -> BigInt {
+        BigInt::from(0i32)
+    }
 }
 
 impl Display for TxIn {
