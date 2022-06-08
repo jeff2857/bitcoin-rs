@@ -101,18 +101,23 @@ pub fn little_endian_to_int(b: &[u8]) -> BigInt {
     BigInt::from_bytes_le(num_bigint::Sign::Plus, b)
 }
 
-pub fn read_varint(s: &[u8]) -> BigInt {
+/// reads a variable integer and decode to BigInt
+pub fn read_varint(s: &[u8]) -> (BigInt, usize) {
     let i = s[0];
+    // number between 253 and 2^16 - 1, start with 253(fd) and the number in 2 bytes in little-endian
     if i == 0xfd {
-        return little_endian_to_int(&s[1..]);
+        return (little_endian_to_int(&s[1..3]), 2);
     }
+    // number between 2^16 and 2^32 - 1, start with 254(fe) and the number in 4 bytes in little-endian
     if i == 0xfe {
-        return little_endian_to_int(&s[1..]);
+        return (little_endian_to_int(&s[1..5]), 4);
     }
+    // number between 2^32 and 2^64 - 1, start with 255(ff) and the number in 8 bytes in little-endian
     if i == 0xff {
-        return little_endian_to_int(&s[1..]);
+        return (little_endian_to_int(&s[1..9]), 8);
     }
-    return little_endian_to_int(&[i]);
+    // number below 253, 1 single byte
+    return (little_endian_to_int(&[i]), 1);
 }
 
 /// encode BigInt to varint

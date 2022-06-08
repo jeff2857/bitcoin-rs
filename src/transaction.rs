@@ -27,10 +27,15 @@ impl Tx {
 
     pub fn parse(serialization: &[u8]) -> Self {
         // todo: change parameter to stream
-        let version = &serialization[0..4];
+        let mut bytes_read = 0;
+        // version is encoded in 4 bytes little-endian
+        let version = &serialization[bytes_read..4];
         let version_parsed = little_endian_to_int(&version);
+        bytes_read += 4;
 
-        let tx_ins = TxIn::parse(serialization);
+        // inputs
+        let tx_ins = TxIn::parse(&serialization[bytes_read..], &mut bytes_read);
+        println!("{}", &bytes_read);
 
         // todo: parse script
         let tx_outs = TxOut::parse(serialization);
@@ -46,10 +51,12 @@ impl Tx {
 }
 
 impl Tx {
+    /// binary hash of the legacy serialization
     pub fn hash(&self) -> Vec<u8> {
         hash256(&self.serialize().into_iter().rev().collect::<Vec<u8>>())
     }
 
+    /// human-readable hexadecimal of the transaction hash
     pub fn id(&self) -> String {
         self.hash().encode_hex::<String>()
     }
@@ -130,7 +137,7 @@ impl TxIn {
         }
     }
 
-    pub fn parse(serialization: &[u8]) -> Vec<Self> {
+    pub fn parse(serialization: &[u8], bytes_read: &mut usize) -> Vec<Self> {
         vec![]
     }
 }
