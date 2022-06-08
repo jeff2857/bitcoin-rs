@@ -38,7 +38,7 @@ impl Tx {
         println!("{}", &bytes_read);
 
         // todo: parse script
-        let tx_outs = TxOut::parse(serialization);
+        let tx_outs = TxOut::parse(&serialization, &mut bytes_read);
 
         Self {
             version: version_parsed,
@@ -195,7 +195,7 @@ impl TxIn {
         result
     }
 
-    // todo: fetch transaction from web and get amout
+    // todo: fetch transaction from web and get amount
 
     pub fn value(&self, testnet: bool) -> BigInt {
         BigInt::from(0i32)
@@ -216,8 +216,35 @@ pub struct TxOut {
 }
 
 impl TxOut {
-    pub fn parse(serialization: &[u8]) -> Vec<Self> {
-        vec![]
+    pub fn parse(serialization: &[u8], bytes_read: &mut usize) -> Vec<Self> {
+        let (num, b_read) = read_varint(&serialization[*bytes_read..]);
+        *bytes_read += b_read;
+
+        let num = num.to_u32_digits().1[0];
+        let mut tx_outs: Vec<Self> = vec![];
+
+        for _ in 0..num {
+            // amount, 8 bytes
+            let amount = &serialization[*bytes_read..(*bytes_read + 8)];
+            let amount = BigInt::from_bytes_le(num_bigint::Sign::Plus, amount);
+            *bytes_read += 8;
+
+            // script pub key, varint
+            let (script_pub_key_len, b_read) = read_varint(&serialization[*bytes_read..]);
+            let script_pub_key_len = script_pub_key_len.to_u32_digits().1[0] as usize;
+            *bytes_read += b_read;
+
+            let script_pub_key = &serialization[*bytes_read..(*bytes_read + script_pub_key_len)];
+            *bytes_read += script_pub_key_len;
+
+            let tx_out = Self {
+                amount,
+                script_pub_key: script_pub_key.to_owned(),
+            };
+            tx_outs.push(tx_out);
+        }
+
+        tx_outs
     }
 }
 
