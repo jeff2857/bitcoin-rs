@@ -14,6 +14,7 @@ mod s256point;
 mod private_key;
 mod utils;
 mod transaction;
+mod script;
 
 
 fn main() {

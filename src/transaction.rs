@@ -3,7 +3,7 @@ use std::fmt::{Display, write};
 use num_bigint::BigInt;
 use hex::ToHex;
 
-use crate::utils::{hash256, int_to_little_endian, encode_varint, little_endian_to_int, read_varint};
+use crate::{utils::{hash256, int_to_little_endian, encode_varint, little_endian_to_int, read_varint}, script::Script};
 
 
 pub struct Tx {
@@ -25,7 +25,7 @@ impl Tx {
         }
     }
 
-    pub fn parse(serialization: &[u8]) -> Self {
+    pub fn parse(serialization: &[u8], testnet: bool) -> Self {
         // todo: change parameter to stream
         let mut bytes_read = 0;
         // version is encoded in 4 bytes little-endian
@@ -35,10 +35,8 @@ impl Tx {
 
         // inputs
         let tx_ins = TxIn::parse(&serialization, &mut bytes_read);
-        println!("{}", &bytes_read);
 
-        // todo: parse script
-
+        // outputs
         let tx_outs = TxOut::parse(&serialization, &mut bytes_read);
 
         // locktime, 4 bytes; if sequence is ffffffff, locktime will be ignored
@@ -49,7 +47,7 @@ impl Tx {
             tx_ins,
             tx_outs,
             locktime,
-            testnet: true,
+            testnet,
         }
     }
 }
@@ -65,6 +63,7 @@ impl Tx {
         self.hash().encode_hex::<String>()
     }
 
+    /// returns the byte serialization of the transaction
     pub fn serialize(&self) -> Vec<u8> {
         let mut result = int_to_little_endian(&self.version, 4);
 
@@ -127,15 +126,15 @@ impl Display for Tx {
 pub struct TxIn {
     pub prev_tx: Vec<u8>,
     pub prev_index: BigInt,
-    pub script_sig: Vec<u8>,
+    pub script_sig: Script,
     pub sequence: BigInt,
 }
 
 impl TxIn {
-    pub fn new(prev_tx: Vec<u8>, prev_index: BigInt, script_sig: Option<Vec<u8>>, sequence: BigInt) -> Self {
+    pub fn new(prev_tx: Vec<u8>, prev_index: BigInt, script_sig: Option<Script>, sequence: BigInt) -> Self {
         let script_sig = match script_sig {
             Some(sig) => sig,
-            None => vec![],
+            None => Script::new(),
         };
 
         Self {
@@ -178,7 +177,7 @@ impl TxIn {
             let tx_in = Self {
                 prev_tx: prev_tx_id.to_owned(),
                 prev_index,
-                script_sig: script_sig.to_owned(),
+                script_sig: Script::parse(script_sig),
                 sequence,
             };
 
@@ -194,14 +193,16 @@ impl TxIn {
     pub fn serialize(&self) -> Vec<u8> {
         let mut result: Vec<u8> = self.prev_tx.clone().into_iter().rev().collect();
         result.extend_from_slice(&int_to_little_endian(&self.prev_index, 4));
-        //result.extend_from_slice(self.script_sig.serialize());
+        result.extend_from_slice(&self.script_sig.serialize());
         result.extend_from_slice(&int_to_little_endian(&self.sequence, 4));
+
         result
     }
 
     // todo: fetch transaction from web and get amount
 
     pub fn value(&self, testnet: bool) -> BigInt {
+        // todo: unimplemented
         BigInt::from(0i32)
     }
 }
@@ -216,7 +217,7 @@ impl Display for TxIn {
 
 pub struct TxOut {
     pub amount: BigInt,
-    pub script_pub_key: Vec<u8>,
+    pub script_pub_key: Script,
 }
 
 impl TxOut {
@@ -243,7 +244,7 @@ impl TxOut {
 
             let tx_out = Self {
                 amount,
-                script_pub_key: script_pub_key.to_owned(),
+                script_pub_key: Script::parse(script_pub_key),
             };
             tx_outs.push(tx_out);
         }
@@ -256,14 +257,15 @@ impl TxOut {
     /// returns the byte serialization of the transaction output
     pub fn serialize(&self) -> Vec<u8> {
         let mut result = int_to_little_endian(&self.amount, 8);
-        //result.extend_from_slice(&self.script_pub_key.serialize());
+        result.extend_from_slice(&self.script_pub_key.serialize());
+
         result
     }
 }
 
 impl Display for TxOut {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}", self.amount, self.script_pub_key.encode_hex::<String>())
+        write!(f, "{}:{}", self.amount, self.script_pub_key)
     }
 }
 
