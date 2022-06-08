@@ -38,13 +38,17 @@ impl Tx {
         println!("{}", &bytes_read);
 
         // todo: parse script
+
         let tx_outs = TxOut::parse(&serialization, &mut bytes_read);
+
+        // locktime, 4 bytes; if sequence is ffffffff, locktime will be ignored
+        let locktime = BigInt::from_bytes_le(num_bigint::Sign::Plus, &serialization[bytes_read..(bytes_read + 4)]);
 
         Self {
             version: version_parsed,
             tx_ins,
             tx_outs,
-            locktime: BigInt::from(0i32),
+            locktime,
             testnet: true,
         }
     }
