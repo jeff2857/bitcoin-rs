@@ -18,6 +18,7 @@ mod utils;
 mod transaction;
 mod script;
 mod tx_fetcher;
+mod op;
 
 
 fn main() {

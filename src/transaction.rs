@@ -136,7 +136,7 @@ impl TxIn {
     pub fn new(prev_tx: Vec<u8>, prev_index: BigInt, script_sig: Option<Script>, sequence: BigInt) -> Self {
         let script_sig = match script_sig {
             Some(sig) => sig,
-            None => Script::new(),
+            None => Script::new(None),
         };
 
         Self {
