@@ -1,3 +1,5 @@
+#![feature(once_cell)]
+
 use num_bigint::BigInt;
 use hex::ToHex;
 use private_key::PrivateKey;
@@ -15,6 +17,7 @@ mod private_key;
 mod utils;
 mod transaction;
 mod script;
+mod tx_fetcher;
 
 
 fn main() {

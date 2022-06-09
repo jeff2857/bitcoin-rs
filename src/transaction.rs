@@ -1,11 +1,12 @@
-use std::fmt::{Display, write};
+use std::fmt::Display;
 
 use num_bigint::BigInt;
 use hex::ToHex;
 
-use crate::{utils::{hash256, int_to_little_endian, encode_varint, little_endian_to_int, read_varint}, script::Script};
+use crate::{utils::{hash256, int_to_little_endian, encode_varint, little_endian_to_int, read_varint}, script::Script, tx_fetcher::TxFetcher};
 
 
+#[derive(Clone)]
 pub struct Tx {
     version: BigInt,
     tx_ins: Vec<TxIn>,
@@ -123,6 +124,7 @@ impl Display for Tx {
 
 // -- TxIn --
 
+#[derive(Clone)]
 pub struct TxIn {
     pub prev_tx: Vec<u8>,
     pub prev_index: BigInt,
@@ -199,11 +201,21 @@ impl TxIn {
         result
     }
 
-    // todo: fetch transaction from web and get amount
+    /// fetch transaction from http request
+    pub fn fetch_tx(&self, testnet: bool) -> Tx {
+        TxFetcher::fetch(&self.prev_tx, testnet, true)
+    }
 
+    // fetch transaction from http request, and get output amount
     pub fn value(&self, testnet: bool) -> BigInt {
-        // todo: unimplemented
-        BigInt::from(0i32)
+        let tx = self.fetch_tx(testnet);
+        tx.tx_outs[self.prev_index.to_u32_digits().1[0] as usize].amount.clone()
+    }
+
+    /// fetch transaction from http request, and get script
+    pub fn script_pubkey(&self, testnet: bool) -> Script {
+        let tx = self.fetch_tx(testnet);
+        tx.tx_outs[self.prev_index.to_u32_digits().1[0] as usize].script_pub_key.clone()
     }
 }
 
@@ -215,6 +227,7 @@ impl Display for TxIn {
 
 // -- TxOut --
 
+#[derive(Clone)]
 pub struct TxOut {
     pub amount: BigInt,
     pub script_pub_key: Script,
@@ -269,7 +282,3 @@ impl Display for TxOut {
     }
 }
 
-// todo: fetch transaction from web
-pub struct TxFetcher {
-
-}
