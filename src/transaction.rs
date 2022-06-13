@@ -96,6 +96,25 @@ impl Tx {
 
         input_sum - output_sum
     }
+
+    pub fn is_coinbase(&self) -> bool {
+        // coinbase transaction must have exactly one input
+        let is_one_input = self.tx_ins.len() == 1;
+        if !is_one_input {
+            return false;
+        }
+
+        // the one input must have a previous transaction of 32 bytes of 00
+        let prev_tx = &self.tx_ins[0].prev_tx;
+        for b in prev_tx {
+            if *b != 0x00u8 {
+                return false;
+            }
+        }
+
+        // the one input must have a previous index of ffffffff
+        return self.tx_ins[0].prev_index == BigInt::parse_bytes(b"ffffffff", 16).unwrap();
+    }
 }
 
 impl Display for Tx {
