@@ -19,6 +19,7 @@ mod transaction;
 mod script;
 mod tx_fetcher;
 mod op;
+mod block;
 
 
 fn main() {

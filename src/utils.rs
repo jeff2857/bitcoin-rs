@@ -144,3 +144,12 @@ pub fn encode_varint(i: &BigInt) -> Vec<u8> {
 
     panic!("integer too large: {}", i);
 }
+
+/// parse block target bits to BigInt, 4 bytes
+pub fn bits_to_target(s: &[u8]) -> BigInt {
+    let exponent = s[3] as u32;
+    let coefficient = little_endian_to_int(&s[0..3]);
+    let target = coefficient * BigInt::from(256usize).pow(exponent - 3);
+
+    target
+}
