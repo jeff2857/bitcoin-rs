@@ -153,3 +153,35 @@ pub fn bits_to_target(s: &[u8]) -> BigInt {
 
     target
 }
+
+pub fn merkle_parent(hash_l: &[u8], hash_r: &[u8]) -> Vec<u8> {
+    let mut hashes = hash_l.to_owned();
+    hashes.extend_from_slice(hash_r);
+    let parent = hash256(&hashes);
+
+    parent
+}
+
+pub fn merkle_parent_level(hashes: &[Vec<u8>]) -> Vec<Vec<u8>> {
+    let mut even_hashes = hashes.to_owned();
+    if hashes.len() % 2 == 1 {
+        even_hashes.push(hashes[hashes.len() - 1].clone());
+    }
+
+    let mut parent_level = vec![];
+    for i in 0..(even_hashes.len() / 2) {
+        let parent = merkle_parent(&even_hashes[i * 2], &even_hashes[i * 2 + 1]);
+        parent_level.push(parent);
+    }
+
+    parent_level
+}
+
+pub fn merkle_root(hashes: &[Vec<u8>]) -> Vec<u8> {
+    let mut current_hashes = hashes.to_owned();
+    while current_hashes.len() > 1 {
+        current_hashes = merkle_parent_level(&current_hashes);
+    }
+
+    current_hashes[0].clone()
+}
