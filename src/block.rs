@@ -1,6 +1,6 @@
 use num_bigint::BigInt;
 
-use crate::utils::{little_endian_to_int, bits_to_target, hash256, merkle_root};
+use crate::utils::{little_endian_to_int, bits_to_target, hash256, merkle_root, int_to_little_endian};
 
 pub struct Block {
     /// version 4 bytes, little-endian
@@ -20,24 +20,76 @@ pub struct Block {
 }
 
 impl Block {
-    pub fn new() -> Self {
-        unimplemented!()
+    pub fn new(version: u32, prev_block: &[u8], merkle_root: &[u8], timestamp: u32, bits: &[u8], nonce: u32, tx_hashes: &[Vec<u8>]) -> Self {
+        Self {
+            version,
+            prev_block: prev_block.to_owned(),
+            merkle_root: merkle_root.to_owned(),
+            timestamp,
+            bits: bits.to_owned(),
+            nonce,
+            tx_hashes: tx_hashes.to_owned(),
+        }
     }
 
     pub fn parse(serialization: &[u8]) -> Self {
+        let mut bytes_read = 0usize;
         let version = little_endian_to_int(&serialization[0..4]).to_u32_digits().1[0];
-        unimplemented!()
+        bytes_read += 4;
+
+        let prev_block = serialization[bytes_read..(bytes_read + 32)].to_owned();
+        bytes_read += 32;
+
+        let merkle_root = serialization[bytes_read..(bytes_read + 32)].to_owned();
+        bytes_read += 32;
+
+        let timestamp = little_endian_to_int(&serialization[bytes_read..(bytes_read + 4)]).to_u32_digits().1[0];
+        bytes_read += 4;
+
+        let bits = serialization[bytes_read..(bytes_read + 4)].to_owned();
+        bytes_read += 4;
+
+        let nonce = little_endian_to_int(&serialization[bytes_read..(bytes_read + 4)]).to_u32_digits().1[0];
+        bytes_read += 4;
+
+        Self {
+            version,
+            prev_block,
+            merkle_root,
+            timestamp,
+            bits,
+            nonce,
+            tx_hashes: vec![],
+        }
     }
 
 }
 
 impl Block {
     pub fn serialize(&self) -> Vec<u8> {
-        unimplemented!()
+        let mut serialization: Vec<u8> = vec![];
+
+        let version = int_to_little_endian(&BigInt::from(self.version), 4);
+        serialization.extend_from_slice(&version);
+
+        serialization.extend_from_slice(&self.prev_block);
+
+        serialization.extend_from_slice(&self.merkle_root);
+
+        let timestamp = int_to_little_endian(&BigInt::from(self.timestamp), 4);
+        serialization.extend_from_slice(&timestamp);
+
+        serialization.extend_from_slice(&self.bits);
+
+        let nonce = int_to_little_endian(&BigInt::from(self.nonce), 4);
+        serialization.extend_from_slice(&nonce);
+
+        serialization
     }
 
-    pub fn hash() -> Vec<u8> {
-        unimplemented!()
+    pub fn hash(&self) -> Vec<u8> {
+        let serialization = self.serialize();
+        hash256(&serialization)
     }
 
     pub fn bip9(&self) -> bool {

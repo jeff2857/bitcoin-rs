@@ -8,6 +8,7 @@ use crate::{utils::{hash256, int_to_little_endian, encode_varint, little_endian_
 
 #[derive(Clone)]
 pub struct Tx {
+    /// transaction version, 4 bytes, LE
     version: BigInt,
     tx_ins: Vec<TxIn>,
     tx_outs: Vec<TxOut>,
@@ -26,6 +27,7 @@ impl Tx {
         }
     }
 
+    /// Parse transaction serialization into Tx struct
     pub fn parse(serialization: &[u8], testnet: bool) -> Self {
         // todo: change parameter to stream
         let mut bytes_read = 0;
