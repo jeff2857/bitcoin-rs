@@ -5,8 +5,16 @@ use crate::utils::{little_endian_to_int, bits_to_target, hash256, merkle_root};
 pub struct Block {
     /// version 4 bytes, little-endian
     pub version: u32,
+    /// previous block hash, 32 bytes, LE
+    pub prev_block: Vec<u8>,
+    /// merkle root, 32 bytes, LE
     pub merkle_root: Vec<u8>,
+    /// timestamp, 4 bytes, LE
+    pub timestamp: u32,
+    /// difficulty target, 4 bytes
     pub bits: Vec<u8>,
+    /// nonce, 4 bytes
+    pub nonce: u32,
     /// hashes of transactions
     pub tx_hashes: Vec<Vec<u8>>,
 }

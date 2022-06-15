@@ -1,4 +1,5 @@
 #![feature(once_cell)]
+#![feature(int_log)]
 
 use num_bigint::BigInt;
 use hex::ToHex;
@@ -20,6 +21,7 @@ mod script;
 mod tx_fetcher;
 mod op;
 mod block;
+mod merkle_tree;
 
 
 fn main() {
