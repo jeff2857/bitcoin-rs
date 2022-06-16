@@ -185,3 +185,17 @@ pub fn merkle_root(hashes: &[Vec<u8>]) -> Vec<u8> {
 
     current_hashes[0].clone()
 }
+
+#[macro_export]
+macro_rules! vec_with_init_val {
+    ( $x: expr; $y: expr) => {
+        {
+            let mut v = Vec::new();
+            for _ in 0..$y {
+                v.push($x);
+            }
+
+            v
+        }
+    };
+}

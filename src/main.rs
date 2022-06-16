@@ -25,6 +25,7 @@ mod merkle_tree;
 
 
 fn main() {
+    env_logger::init();
     //let x1 = Rc::new(S256Field::new(BigInt::from(15i32)));
     //let y1 = Rc::new(S256Field::new(BigInt::from(86i32)));
     //let x2 = Rc::new(S256Field::new(BigInt::from(17i32)));

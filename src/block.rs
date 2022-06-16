@@ -134,3 +134,10 @@ impl Block {
         calculated_merkle_root == self.merkle_root
     }
 }
+
+
+// -- test --
+
+#[cfg(test)]
+mod test_block {
+}
