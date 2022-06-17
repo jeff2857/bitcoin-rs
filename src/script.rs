@@ -102,17 +102,17 @@ impl Script {
         for cmd in &self.cmds {
             match cmd {
                 ScriptCmd::OpCode(op_code) => {
-                    result.extend_from_slice(&int_to_little_endian(&BigInt::from(*op_code as i32), 1));
+                    result.extend_from_slice(&int_to_little_endian(&BigInt::from(*op_code), 1));
                 },
                 ScriptCmd::Cmd(c) => {
                     let len = c.len();
                     if len < 75 {
                         result.extend_from_slice(&int_to_little_endian(&BigInt::from(len), 1));
                     } else if len > 75 && len < 0x100 {
-                        result.extend_from_slice(&int_to_little_endian(&BigInt::from(76i32), 1));
+                        result.extend_from_slice(&int_to_little_endian(&BigInt::from(76u8), 1));
                         result.extend_from_slice(&int_to_little_endian(&BigInt::from(len), 1));
                     } else if len >= 0x100 && len <= 520 {
-                        result.extend_from_slice(&int_to_little_endian(&BigInt::from(77i32), 1));
+                        result.extend_from_slice(&int_to_little_endian(&BigInt::from(77u8), 1));
                         result.extend_from_slice(&int_to_little_endian(&BigInt::from(len), 2));
                     } else {
                         panic!("too long a cmd");
@@ -163,5 +163,22 @@ mod tests_script {
                 info!("op: {:02x?}", op);
             }
         }
+    }
+
+    #[test]
+    fn test_serialize() {
+        env_logger::init();
+
+        let serialization = hex::decode("6b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccf\
+        cf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8\
+        e10615bed01210349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278\
+        a".to_string()).unwrap();
+
+        let script = Script::parse(&serialization);
+
+        let script_serialized = script.serialize();
+        info!("{}", script_serialized.encode_hex::<String>());
+
+        assert_eq!(serialization, script_serialized);
     }
 }
