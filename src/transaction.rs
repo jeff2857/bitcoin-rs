@@ -323,6 +323,8 @@ mod tests_tx {
 
     #[test]
     fn test_parse_tx() {
+        env_logger::init();
+
         let serialization = hex::decode("010000000456919960ac691763688d3d3bcea9ad6ecaf875df5339e148a1fc61c6ed7a069e010\
         000006a47304402204585bcdef85e6b1c6af5c2669d4830ff86e42dd205c0e089bc2a821657e951\
         c002201024a10366077f87d6bce1f7100ad8cfa8a064b39d4e8fe4ea13a7b71aa8180f012102f0\

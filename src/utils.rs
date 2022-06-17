@@ -106,15 +106,15 @@ pub fn read_varint(s: &[u8]) -> (BigInt, usize) {
     let i = s[0];
     // number between 253 and 2^16 - 1, start with 253(fd) and the number in 2 bytes in little-endian
     if i == 0xfd {
-        return (little_endian_to_int(&s[1..3]), 2);
+        return (little_endian_to_int(&s[1..3]), 1 + 2);
     }
     // number between 2^16 and 2^32 - 1, start with 254(fe) and the number in 4 bytes in little-endian
     if i == 0xfe {
-        return (little_endian_to_int(&s[1..5]), 4);
+        return (little_endian_to_int(&s[1..5]), 1 + 4);
     }
     // number between 2^32 and 2^64 - 1, start with 255(ff) and the number in 8 bytes in little-endian
     if i == 0xff {
-        return (little_endian_to_int(&s[1..9]), 8);
+        return (little_endian_to_int(&s[1..9]), 1 + 8);
     }
     // number below 253, 1 single byte
     return (little_endian_to_int(&[i]), 1);

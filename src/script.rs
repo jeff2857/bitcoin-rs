@@ -1,7 +1,9 @@
 use std::fmt::Display;
 
+use log::info;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
+use hex::ToHex;
 
 use crate::utils::{read_varint, little_endian_to_int, int_to_little_endian, encode_varint};
 
@@ -31,10 +33,16 @@ impl Script {
     }
 
     pub fn parse(s: &[u8]) -> Self {
-        let (len, _) = read_varint(s);
+        info!("script serialization: {}", s.encode_hex::<String>());
+
+        let (len, bytes_read) = read_varint(s);
         let len = len.to_u32_digits().1[0] as usize;
+        info!("script length: {}", len);
+
         let mut cmds: Vec<ScriptCmd> = vec![];
         let mut count = 0usize;
+
+        let s = &s[bytes_read..];
 
         while count < len {
             let current = s[count];
@@ -49,7 +57,7 @@ impl Script {
                 count += n;
             } else if current_byte == 76 { // OP_PUSHDATA1, next 1 byte implys how many bytes to
                                            // read
-                let data_len = little_endian_to_int(&s[count..(count + 1)]).to_u32_digits().1[0] as usize;
+                let data_len = little_endian_to_int(&[s[count]]).to_u32_digits().1[0] as usize;
                 count += 1;
                 let mut op: Vec<u8> = vec![];
                 op.extend_from_slice(&s[count..(count + data_len)]);
@@ -68,6 +76,7 @@ impl Script {
             }
         }
 
+        info!("count: {}, len: {}", count, len);
         if count != len {
             panic!("parsing script failed");
         }
@@ -121,5 +130,38 @@ impl Display for Script {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // todo: unimplemented
         write!(f, "")
+    }
+}
+
+
+#[cfg(test)]
+mod tests_script {
+    use log::info;
+    use hex::ToHex;
+
+    use crate::script::ScriptCmd;
+
+    use super::Script;
+
+    #[test]
+    fn test_parse() {
+        env_logger::init();
+
+        let serialization = hex::decode("6b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccf\
+        cf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8\
+        e10615bed01210349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278\
+        a".to_string()).unwrap();
+
+        let script = Script::parse(&serialization);
+        info!("{}", script);
+
+        match &script.cmds[0] {
+            ScriptCmd::Cmd(cmd) => {
+                info!("cmd: {}", cmd.encode_hex::<String>());
+            },
+            ScriptCmd::OpCode(op) => {
+                info!("op: {:02x?}", op);
+            }
+        }
     }
 }
